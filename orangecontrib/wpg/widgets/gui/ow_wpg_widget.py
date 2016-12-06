@@ -1,6 +1,8 @@
 import sys
 from PyMca5.PyMcaGui.plotting.PlotWindow import PlotWindow
 
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+
 from PyQt4 import QtGui
 from PyQt4.QtCore import QRect
 from PyQt4.QtGui import QApplication
@@ -159,33 +161,44 @@ class WPGWidget(widget.OWWidget):
             if not plot_data is None:
                 self.view_type_combo.setEnabled(False)
 
-                titles = self.getTitles()
-                xtitles = self.getXTitles()
-                ytitles = self.getYTitles()
+                if isinstance(plot_data[0], FigureCanvas):
+                    for index in range(0, len(self.getTabTitles())):
 
-                progress_bar_step = (100-progressBarValue)/len(titles)
+                        self.tab[index].layout().removeItem(self.tab[index].layout().itemAt(0))
 
-                for index in range(0, len(titles)):
-                    x_index, y_index = self.getVariablesToPlot()[index]
-                    log_x, log_y = self.getLogPlot()[index]
+                        self.plot_canvas[index] = plot_data[index]
 
-                    try:
-                        self.plot_histo(plot_data[x_index, :],
-                                        plot_data[y_index, :],
-                                        progressBarValue + ((index+1)*progress_bar_step),
-                                        tabs_canvas_index=index,
-                                        plot_canvas_index=index,
-                                        title=titles[index],
-                                        xtitle=xtitles[index],
-                                        ytitle=ytitles[index],
-                                        log_x=log_x,
-                                        log_y=log_y)
+                        self.tab[index].layout().addWidget(self.plot_canvas[index])
 
                         self.tabs.setCurrentIndex(index)
-                    except Exception as e:
-                        self.view_type_combo.setEnabled(True)
+                else:
+                    titles = self.getTitles()
+                    xtitles = self.getXTitles()
+                    ytitles = self.getYTitles()
 
-                        raise Exception("Data not plottable: bad content\n" + str(e))
+                    progress_bar_step = (100-progressBarValue)/len(titles)
+
+                    for index in range(0, len(titles)):
+                        x_index, y_index = self.getVariablesToPlot()[index]
+                        log_x, log_y = self.getLogPlot()[index]
+
+                        try:
+                            self.plot_histo(plot_data[x_index, :],
+                                            plot_data[y_index, :],
+                                            progressBarValue + ((index+1)*progress_bar_step),
+                                            tabs_canvas_index=index,
+                                            plot_canvas_index=index,
+                                            title=titles[index],
+                                            xtitle=xtitles[index],
+                                            ytitle=ytitles[index],
+                                            log_x=log_x,
+                                            log_y=log_y)
+
+                            self.tabs.setCurrentIndex(index)
+                        except Exception as e:
+                            self.view_type_combo.setEnabled(True)
+
+                            raise Exception("Data not plottable: bad content\n" + str(e))
 
                 self.view_type_combo.setEnabled(True)
             else:
@@ -268,6 +281,9 @@ class WPGWidget(widget.OWWidget):
 
     def extract_wpg_output_from_calculation_output(self, calculation_output):
         raise Exception("This method should be reimplementd in subclasses!")
+
+    def getFigureCanvas(self, figure):
+        return FigureCanvas(figure)
 
 if __name__ == "__main__":
     a = QApplication(sys.argv)
