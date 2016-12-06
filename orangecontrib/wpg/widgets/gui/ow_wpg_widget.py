@@ -208,7 +208,7 @@ class WPGWidget(widget.OWWidget):
 
             self.tab[tabs_canvas_index].layout().addWidget(self.plot_canvas[plot_canvas_index])
 
-        WisePlot.plot_histo(self.plot_canvas[plot_canvas_index], x, y, title, xtitle, ytitle)
+        WPGPlot.plot_histo(self.plot_canvas[plot_canvas_index], x, y, title, xtitle, ytitle)
 
         self.progressBarSet(progressBarValue)
 
@@ -225,7 +225,7 @@ class WPGWidget(widget.OWWidget):
 
             self.check_fields()
 
-            calculation_output = self.do_wise_calculation()
+            calculation_output = self.do_wpg_calculation()
 
             self.progressBarSet(50)
 
@@ -249,7 +249,7 @@ class WPGWidget(widget.OWWidget):
 
             self.setStatusMessage("Error!")
 
-            #raise exception
+            raise exception
 
         self.progressBarFinished()
 
@@ -260,7 +260,7 @@ class WPGWidget(widget.OWWidget):
     def check_fields(self):
         raise Exception("This method should be reimplementd in subclasses!")
 
-    def do_wise_calculation(self):
+    def do_wpg_calculation(self):
         raise Exception("This method should be reimplementd in subclasses!")
 
     def extract_plot_data_from_calculation_output(self, calculation_output):
