@@ -1,7 +1,7 @@
 import sys
-from PyMca5.PyMcaGui.plotting.PlotWindow import PlotWindow
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+import pylab
 
 from PyQt4 import QtGui
 from PyQt4.QtCore import QRect
@@ -126,20 +126,6 @@ class WPGWidget(widget.OWWidget):
     def getTabTitles(self):
         return ["Calculation Result"]
 
-    def getTitles(self):
-        return ["Calculation Result"]
-
-    def getXTitles(self):
-        return ["Energy [eV]"]
-
-    def getYTitles(self):
-        return ["X [$\mu$m]"]
-
-    def getVariablesToPlot(self):
-        return [(0, 1)]
-
-    def getLogPlot(self):
-        return [(False, False)]
 
     def set_ViewType(self):
         self.progressBarInit()
@@ -161,8 +147,12 @@ class WPGWidget(widget.OWWidget):
             if not plot_data is None:
                 self.view_type_combo.setEnabled(False)
 
-                if isinstance(plot_data[0], FigureCanvas):
-                    for index in range(0, len(self.getTabTitles())):
+                titles = self.getTabTitles()
+
+                progress_bar_step = (100-progressBarValue)/len(titles)
+
+                try:
+                    for index in range(0, len(titles)):
 
                         self.tab[index].layout().removeItem(self.tab[index].layout().itemAt(0))
 
@@ -171,34 +161,13 @@ class WPGWidget(widget.OWWidget):
                         self.tab[index].layout().addWidget(self.plot_canvas[index])
 
                         self.tabs.setCurrentIndex(index)
-                else:
-                    titles = self.getTitles()
-                    xtitles = self.getXTitles()
-                    ytitles = self.getYTitles()
 
-                    progress_bar_step = (100-progressBarValue)/len(titles)
+                        self.progressBarSet(progressBarValue + ((index+1)*progress_bar_step))
 
-                    for index in range(0, len(titles)):
-                        x_index, y_index = self.getVariablesToPlot()[index]
-                        log_x, log_y = self.getLogPlot()[index]
+                except Exception as e:
+                    self.view_type_combo.setEnabled(True)
 
-                        try:
-                            self.plot_histo(plot_data[x_index, :],
-                                            plot_data[y_index, :],
-                                            progressBarValue + ((index+1)*progress_bar_step),
-                                            tabs_canvas_index=index,
-                                            plot_canvas_index=index,
-                                            title=titles[index],
-                                            xtitle=xtitles[index],
-                                            ytitle=ytitles[index],
-                                            log_x=log_x,
-                                            log_y=log_y)
-
-                            self.tabs.setCurrentIndex(index)
-                        except Exception as e:
-                            self.view_type_combo.setEnabled(True)
-
-                            raise Exception("Data not plottable: bad content\n" + str(e))
+                    raise Exception("Data not plottable: bad content\n" + str(e))
 
                 self.view_type_combo.setEnabled(True)
             else:
@@ -210,21 +179,6 @@ class WPGWidget(widget.OWWidget):
         cursor.insertText(text)
         self.wise_output.setTextCursor(cursor)
         self.wise_output.ensureCursorVisible()
-
-    def plot_histo(self, x, y, progressBarValue, tabs_canvas_index, plot_canvas_index, title="", xtitle="", ytitle="", log_x=False, log_y=False):
-        if self.plot_canvas[plot_canvas_index] is None:
-            self.plot_canvas[plot_canvas_index] = PlotWindow(roi=False, control=True, position=True, plugins=False)
-            self.plot_canvas[plot_canvas_index].setDefaultPlotLines(True)
-            self.plot_canvas[plot_canvas_index].setActiveCurveColor(color='darkblue')
-            self.plot_canvas[plot_canvas_index].setXAxisLogarithmic(log_x)
-            self.plot_canvas[plot_canvas_index].setYAxisLogarithmic(log_y)
-
-            self.tab[tabs_canvas_index].layout().addWidget(self.plot_canvas[plot_canvas_index])
-
-        WPGPlot.plot_histo(self.plot_canvas[plot_canvas_index], x, y, title, xtitle, ytitle)
-
-        self.progressBarSet(progressBarValue)
-
 
     def compute(self):
         self.setStatusMessage("Running WPG")
@@ -282,8 +236,11 @@ class WPGWidget(widget.OWWidget):
     def extract_wpg_output_from_calculation_output(self, calculation_output):
         raise Exception("This method should be reimplementd in subclasses!")
 
-    def getFigureCanvas(self, figure):
-        return FigureCanvas(figure)
+    def reset_plotting(self):
+        pylab.close("all")
+
+    def getFigureCanvas(self, number):
+        return FigureCanvas(pylab.figure(number))
 
 if __name__ == "__main__":
     a = QApplication(sys.argv)

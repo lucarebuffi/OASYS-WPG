@@ -13,9 +13,6 @@ from wpg import Wavefront
 
 from wpg.useful_code.wfrutils import plot_wfront
 
-
-import pylab
-
 class OWGaussianWavefront(WPGWidget):
     name = "GaussianWavefront"
     id = "GaussianWavefront"
@@ -38,7 +35,7 @@ class OWGaussianWavefront(WPGWidget):
 
     def build_gui(self):
 
-        main_box = oasysgui.widgetBox(self.controlArea, "Gaussian Source 1D Input Parameters", orientation="vertical", width=self.CONTROL_AREA_WIDTH-5, height=200)
+        main_box = oasysgui.widgetBox(self.controlArea, "Gaussian Wavefront Input Parameters", orientation="vertical", width=self.CONTROL_AREA_WIDTH-5, height=200)
 
         oasysgui.lineEdit(main_box, self, "qnC", "e-bunch charge [nC]", labelWidth=260, valueType=float, orientation="horizontal")
         oasysgui.lineEdit(main_box, self, "thetaOM", "thetaOM", labelWidth=260, valueType=float, orientation="horizontal")
@@ -52,7 +49,7 @@ class OWGaussianWavefront(WPGWidget):
 
         gui.separator(main_box, height=5)
 
-        oasysgui.lineEdit(main_box, self, "distance", "Distance (plots) [m]", labelWidth=260, valueType=float, orientation="horizontal")
+        oasysgui.lineEdit(main_box, self, "distance", "Distance to next [m]", labelWidth=260, valueType=float, orientation="horizontal")
 
     def after_change_workspace_units(self):
         pass
@@ -60,7 +57,12 @@ class OWGaussianWavefront(WPGWidget):
     def check_fields(self):
         congruence.checkPositiveNumber(self.qnC, "e-bunch charge")
         congruence.checkStrictlyPositiveNumber(self.ekev, "energy")
-        congruence.checkPositiveNumber(self.distance, "Distance")
+
+        congruence.checkStrictlyPositiveNumber(self.pulse_duration, "Pulse Duration")
+        congruence.checkStrictlyPositiveNumber(self.pulseEnergy, "Pulse Energy")
+        congruence.checkStrictlyPositiveNumber(self.coh_time, "Coherence time")
+
+        congruence.checkPositiveNumber(self.distance, "Distance to next")
 
     def do_wpg_calculation(self):
 
@@ -74,6 +76,9 @@ class OWGaussianWavefront(WPGWidget):
 
         #define limits
         range_xy = theta_fwhm/k*self.distance*7. # sigma*7 beam size
+
+        self.range_xy = range_xy
+
         npoints=180
 
 
@@ -96,25 +101,24 @@ class OWGaussianWavefront(WPGWidget):
 
 
     def extract_plot_data_from_calculation_output(self, calculation_output):
+        self.reset_plotting()
+
         plot_wfront(calculation_output, 'at '+ str(self.distance) +' m',False, False, 1e-5,1e-5,'x', False)
 
-        return self.getFigureCanvas(pylab.figure(1)), \
-               self.getFigureCanvas(pylab.figure(2)), \
-               self.getFigureCanvas(pylab.figure(3))
+        return self.getFigureCanvas(1), \
+               self.getFigureCanvas(2), \
+               self.getFigureCanvas(3)
 
     def getTabTitles(self):
         return ["Intensity", "Vertical Cut", "Horizontal Cut"]
 
     def extract_wpg_output_from_calculation_output(self, calculation_output):
-        return WPGOutput(wavefront=calculation_output, beamline=None)
-
+        return WPGOutput(thetaOM=self.thetaOM,
+                         range_xy=self.range_xy,
+                         wavefront=calculation_output,
+                         distance_to_previous=self.distance,
+                         total_distance=self.distance,
+                         beamline=None)
 
     def calculate_theta_fwhm_cdr(self, ekev, qnC):
-        """
-        Calculate angular divergence using formula from XFEL CDR2011
-
-        :param ekev: Energy in keV
-        :param qnC: e-bunch charge, [nC]
-        :return: theta_fwhm [units?]
-        """
         return (17.2 - 6.4 * numpy.sqrt(qnC))*1e-6/ekev**0.85
