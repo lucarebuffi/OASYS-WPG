@@ -20,7 +20,7 @@ LICENSE = 'GPLv3'
 KEYWORDS = (
     'waveoptics',
     'simulator',
-    'oasys',
+    'oasys1',
 )
 
 CLASSIFIERS = (
@@ -37,13 +37,7 @@ SETUP_REQUIRES = (
 )
 
 INSTALL_REQUIRES = (
-    'setuptools',
-    'numpy',
-    'scipy',
-    'matplotlib==1.4.3',
-    'srxraylib>=0.0.9',
-    'orange-widget-core>=0.0.2',
-    'oasys>=0.1.18',
+    'oasys>=1.0.0',
 )
 
 PACKAGES = find_packages(exclude=('*.tests', '*.tests.*', 'tests.*', 'tests'))
