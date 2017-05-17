@@ -2,7 +2,14 @@
 
 import os
 
-from setuptools import find_packages, setup
+try:
+    from setuptools import find_packages, setup
+except ImportError:
+    import ez_setup
+    ez_setup.use_setuptools()
+    from setuptools import find_packages, setup
+except AttributeError:
+    from setuptools import find_packages, setup
 
 NAME = 'OASYS-WPG'
 VERSION = '0.0.1'
